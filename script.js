@@ -150,7 +150,7 @@ function highlightBodyNumbers(root=document.body){
   });
 }
 
-const balanceTigerAssets=[1,2,3,4,5].map(number=>`assets/图标/素材贴纸/老虎素材${number}.png`);
+const balanceTigerAssets=[1,2,3,4,5].map(number=>`assets/图标/素材贴纸/老虎素材${number}_裁剪.png`);
 let balanceTimer=0;
 function contentBottom(paper){
   const top=paper.getBoundingClientRect().top;
@@ -163,13 +163,15 @@ function balanceDiarySpreads(){
   window.__balanceRuns=(window.__balanceRuns||0)+1;
   document.querySelectorAll('.balance-fill').forEach(fill=>fill.remove());
   document.querySelectorAll('.book-spread:not(.single-cover-layout)').forEach((spread,spreadIndex)=>{
+    const pageIndex=pages.indexOf(spread.closest('.page'));
+    if(pageIndex===1||pageIndex===2||pageIndex===3)return;
     const papers=[...spread.children].filter(child=>child.classList.contains('paper'));
     if(papers.length!==2)return;
     const bottoms=papers.map(contentBottom);
     const shorter=bottoms[0]<=bottoms[1]?0:1;
     const difference=Math.abs(bottoms[0]-bottoms[1]);
     if(difference)window.__balanceSeen=[spreadIndex,Math.round(bottoms[0]),Math.round(bottoms[1]),Math.round(difference)];
-    if(difference<2)return;
+    if(difference<12)return;
     const fill=document.createElement('div');
     fill.className='balance-fill';
     const previous=[...papers[shorter].children].filter(child=>getComputedStyle(child).position!=='absolute').at(-1);
@@ -180,7 +182,9 @@ function balanceDiarySpreads(){
     image.src=balanceTigerAssets[(spreadIndex*2+shorter)%balanceTigerAssets.length];
     image.alt='东北虎日记装饰插画';
     fill.appendChild(image);
-    papers[shorter].appendChild(fill);
+    const restartButton=papers[shorter].querySelector('#restartStory');
+    if(restartButton)papers[shorter].insertBefore(fill,restartButton);
+    else papers[shorter].appendChild(fill);
     const allBottom=paper=>[...paper.children].reduce((bottom,child)=>Math.max(bottom,child.getBoundingClientRect().bottom-paper.getBoundingClientRect().top),0);
     for(let pass=0;pass<5;pass++){
       const measured=papers.map(allBottom);
@@ -370,7 +374,6 @@ function setupFigureLabels(){
   add(document.getElementById('interactiveWordcloud'),'东北虎相关评论关键词气泡图',true);
   add(document.querySelector('.mascot-wordcloud'),'亚冬会吉祥物相关词云图');
   document.querySelectorAll('.policy-carousel figure').forEach(figure=>add(figure,figure.querySelector('img')?.alt||'中俄东北虎保护政策图',false,true));
-  add(document.querySelector('.game-poster'),'东北虎成长小游戏海报');
   add(document.querySelector('.game-stage'),'东北虎成长小游戏交互画面',true);
   entries.sort((a,b)=>a.element.compareDocumentPosition(b.element)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1);
   entries.forEach((entry,index)=>{
@@ -445,7 +448,7 @@ const gameBoardHome=document.createComment('game-board-home');
 gameBoardSheet.parentNode.insertBefore(gameBoardHome,gameBoardSheet);
 
 const gameImages={
-  tiger:'assets/图标/素材贴纸/老虎素材3.png',
+  tiger:'assets/图标/素材贴纸/老虎素材3_裁剪.png',
   pig:'assets/图标/素材贴纸/猎物1小猪.png',
   deer:'assets/图标/素材贴纸/猎物2小鹿.png',
   road:'assets/图标/素材贴纸/公路.png',
@@ -574,7 +577,12 @@ resetGame();
 // Lightweight deep links are also used for visual QA screenshots.
 const previewParams=new URLSearchParams(location.search);
 const previewPage=Number(previewParams.get('page'));
-if(previewParams.has('page')&&Number.isFinite(previewPage))gotoPage(previewPage);
+if(previewParams.has('page')&&Number.isFinite(previewPage)){
+  current=Math.max(0,Math.min(pages.length-1,previewPage));
+  pages.forEach((page,index)=>page.classList.toggle('active',index===current));
+  updateNav();
+  initActivePage();
+}
 if(previewParams.get('game')==='1')setTimeout(startGame,720);
 if(previewParams.get('qa')==='1')window.addEventListener('load',()=>setTimeout(()=>{
   const balanceDiffs=[...document.querySelectorAll('.book-spread:not(.single-cover-layout)')].map(spread=>{
