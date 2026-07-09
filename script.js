@@ -193,7 +193,7 @@ function balanceDiarySpreads(){
     image.alt='东北虎日记装饰插画';
     fill.appendChild(image);
     const restartButton=papers[shorter].querySelector('#restartStory');
-    if(restartButton)papers[shorter].insertBefore(fill,restartButton);
+    if(restartButton)restartButton.insertAdjacentElement('afterend',fill);
     else papers[shorter].appendChild(fill);
     const allBottom=paper=>[...paper.children].reduce((bottom,child)=>Math.max(bottom,child.getBoundingClientRect().bottom-paper.getBoundingClientRect().top),0);
     for(let pass=0;pass<5;pass++){
