@@ -8,16 +8,26 @@ const pageIndexBadge = document.getElementById('pageIndexBadge');
 let current = 0;
 let transitionTimer = null;
 
-pages.forEach((page,index)=>{
+const navItems=[
+  {title:'林海回声',page:0},
+  {title:'虎步维艰·全域生存困境',page:2},
+  {title:'虎困之由·三大致危根源',page:3},
+  {title:'虎途之隘·种群复苏千重壁垒',page:4},
+  {title:'虎兴长白·中国系统性护虎方案',page:5},
+  {title:'虎鸣千山·尾声',page:7}
+];
+
+navItems.forEach((item,index)=>{
   const button = document.createElement('button');
   button.className = `nav-item${index===0?' active':''}`;
-  button.dataset.page = index;
-  button.innerHTML = `<span>${page.dataset.title||`第 ${index} 页`}</span>`;
+  button.dataset.page = item.page;
+  button.innerHTML = `<span>${item.title}</span>`;
   drawer.appendChild(button);
 });
 
 function updateNav(){
-  document.querySelectorAll('.nav-item').forEach((btn,i)=>btn.classList.toggle('active',i===current));
+  const activeIndex=navItems.reduce((active,item,index)=>current>=item.page?index:active,0);
+  document.querySelectorAll('.nav-item').forEach((btn,i)=>btn.classList.toggle('active',i===activeIndex));
   progressBar.style.width = `${((current+1)/pages.length)*100}%`;
   pageIndexBadge.textContent = `第 ${String(current).padStart(2,'0')} 页 / 共 ${String(pages.length-1).padStart(2,'0')} 页`;
   document.body.classList.toggle('cover-mode',current===0);
@@ -246,12 +256,24 @@ const poachInfo={
 const poachDetail=document.getElementById('poachDetail');
 function showPoach(key){
   const info=poachInfo[key];
+  if(!poachDetail||!info)return;
   poachDetail.innerHTML=`<h4>${info.title}</h4>${info.copy.map(text=>`<p>${text}</p>`).join('')}`;
   document.querySelectorAll('[data-poach]').forEach(button=>button.classList.toggle('active',button.dataset.poach===key));
   queueBalance();
 }
 document.querySelectorAll('[data-poach]').forEach(button=>button.addEventListener('click',()=>showPoach(button.dataset.poach)));
 showPoach('medicine');
+
+const theftDetail=document.getElementById('theftDetail');
+function showTheft(key){
+  const info=poachInfo[key];
+  if(!theftDetail||!info)return;
+  theftDetail.innerHTML=`<h4>${info.title}</h4>${info.copy.map(text=>`<p>${text}</p>`).join('')}`;
+  document.querySelectorAll('[data-theft]').forEach(button=>button.classList.toggle('active',button.dataset.theft===key));
+  queueBalance();
+}
+document.querySelectorAll('[data-theft]').forEach(button=>button.addEventListener('click',()=>showTheft(button.dataset.theft)));
+showTheft('medicine');
 
 // India mortality chart, recolored to the new mountain background palette.
 const deathData=[
@@ -358,7 +380,12 @@ setupWordCloud();
 // Sequential labels for every editorial visual, including interactive charts and carousels.
 function setupFigureLabels(){
   const entries=[];
-  const add=(element,title,interactive=false,inside=false)=>{if(element)entries.push({element,title,interactive,inside})};
+  const seen=new Set();
+  const add=(element,title,interactive=false,inside=false)=>{
+    if(!element||seen.has(element))return;
+    seen.add(element);
+    entries.push({element,title,interactive,inside});
+  };
   add(document.getElementById('tigerMap'),'亚洲野生虎分布新地图',true);
   document.querySelectorAll('.chapter-data-figure').forEach(figure=>add(figure,figure.querySelector('img')?.alt||'东北虎数据图',false,true));
   add(document.querySelector('img[alt="俄罗斯东北虎年度盗猎数量变化"]'),'俄罗斯东北虎年度盗猎数量变化');
@@ -375,6 +402,12 @@ function setupFigureLabels(){
   add(document.querySelector('.mascot-wordcloud'),'亚冬会吉祥物相关词云图');
   document.querySelectorAll('.policy-carousel figure').forEach(figure=>add(figure,figure.querySelector('img')?.alt||'中俄东北虎保护政策图',false,true));
   add(document.querySelector('.game-stage'),'东北虎成长小游戏交互画面',true);
+  document.querySelectorAll('img.zoomable').forEach(image=>{
+    if(image.closest('#tigerMap,.animated-flow,.interactive-wordcloud,.policy-carousel,.game-stage'))return;
+    const figure=image.closest('figure');
+    const title=image.dataset.caption||figure?.querySelector('figcaption')?.textContent?.trim()||image.alt||'东北虎数据图';
+    add(figure||image,title,false,!!figure);
+  });
   entries.sort((a,b)=>a.element.compareDocumentPosition(b.element)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1);
   entries.forEach((entry,index)=>{
     if(entry.inside?entry.element.firstElementChild?.classList.contains('figure-label'):entry.element.previousElementSibling?.classList.contains('figure-label'))return;
