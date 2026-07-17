@@ -389,7 +389,7 @@ function setupFigureLabels(){
   add(document.getElementById('cameraRegionMap'),'东北虎红外相机分布热力图',true);
   add(document.getElementById('barrage'),'东北虎相关评论滚动弹幕',true);
   add(document.querySelector('img[alt="东北虎研究文献统计表"]'),'东北虎研究文献统计');
-  document.querySelectorAll('.culture-card img').forEach(image=>add(image,image.alt));
+  document.querySelectorAll('.culture-card img').forEach(image=>add(image,`${image.alt}（点击图片跳转）`));
   document.querySelectorAll('.policy-carousel figure').forEach(figure=>add(figure,figure.querySelector('img')?.alt||'中俄东北虎保护政策图',false,true));
   add(document.querySelector('.game-stage'),'东北虎成长小游戏交互画面',true);
   document.querySelectorAll('img.zoomable').forEach(image=>{

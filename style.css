@@ -286,7 +286,7 @@ body.cover-mode .book-shell{inset:22px}
 .case-note-sticker{position:absolute;right:16px;top:16px;width:68px;height:68px;object-fit:contain;padding:6px;border-radius:16px;background:#fff;box-shadow:0 5px 14px rgba(56,72,49,.16);transform:rotate(5deg)}
 .third-comparison-paper .case-note{margin-top:8px;padding:23px 90px 18px 20px}
 .third-comparison-paper .case-note strong{font-size:20px;margin:7px 0 10px}
-.third-comparison-paper .case-note p{font-size:16.8px;line-height:1.5;margin:5px 0}
+.third-comparison-paper .case-note p{font-size:16.8px;line-height:1.82;margin:5px 0}
 
 /* Animated road-like flow: the entire reference artwork remains visible. */
 .animated-flow{position:relative;margin:20px 0;width:100%;aspect-ratio:4/3;overflow:hidden;background:#07395b}
