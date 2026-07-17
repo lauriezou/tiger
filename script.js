@@ -160,56 +160,20 @@ function highlightBodyNumbers(root=document.body){
   });
 }
 
-const balanceTigerAssets=[1,2,3,4,5].map(number=>`assets/图标/素材贴纸/老虎素材${number}_裁剪.png`);
 let balanceTimer=0;
-function contentBottom(paper){
-  const top=paper.getBoundingClientRect().top;
-  return [...paper.children].reduce((bottom,child)=>{
-    if(child.classList.contains('balance-fill')||getComputedStyle(child).position==='absolute')return bottom;
-    return Math.max(bottom,child.getBoundingClientRect().bottom-top);
-  },0);
-}
 function balanceDiarySpreads(){
   window.__balanceRuns=(window.__balanceRuns||0)+1;
   document.querySelectorAll('.balance-fill').forEach(fill=>fill.remove());
+  const mobile=window.matchMedia('(max-width:820px)').matches;
   document.querySelectorAll('.book-spread:not(.single-cover-layout)').forEach((spread,spreadIndex)=>{
-    const pageIndex=pages.indexOf(spread.closest('.page'));
-    if(pageIndex===1||pageIndex===2||pageIndex===3)return;
     const papers=[...spread.children].filter(child=>child.classList.contains('paper'));
     if(papers.length!==2)return;
-    const bottoms=papers.map(contentBottom);
-    const shorter=bottoms[0]<=bottoms[1]?0:1;
-    const difference=Math.abs(bottoms[0]-bottoms[1]);
-    if(difference)window.__balanceSeen=[spreadIndex,Math.round(bottoms[0]),Math.round(bottoms[1]),Math.round(difference)];
-    if(difference<12)return;
-    const fill=document.createElement('div');
-    fill.className='balance-fill';
-    const previous=[...papers[shorter].children].filter(child=>getComputedStyle(child).position!=='absolute').at(-1);
-    const previousMargin=previous?parseFloat(getComputedStyle(previous).marginBottom)||0:0;
-    fill.style.marginTop=`${-previousMargin}px`;
-    fill.style.height=`${Math.max(1,difference)}px`;
-    const image=document.createElement('img');
-    image.src=balanceTigerAssets[(spreadIndex*2+shorter)%balanceTigerAssets.length];
-    image.alt='东北虎日记装饰插画';
-    fill.appendChild(image);
-    const restartButton=papers[shorter].querySelector('#restartStory');
-    if(restartButton)restartButton.insertAdjacentElement('afterend',fill);
-    else papers[shorter].appendChild(fill);
-    const allBottom=paper=>[...paper.children].reduce((bottom,child)=>Math.max(bottom,child.getBoundingClientRect().bottom-paper.getBoundingClientRect().top),0);
-    for(let pass=0;pass<5;pass++){
-      const measured=papers.map(allBottom);
-      const correction=measured[1-shorter]-measured[shorter];
-      const currentHeight=fill.getBoundingClientRect().height;
-      const nextHeight=currentHeight+correction;
-      if(nextHeight>=0)fill.style.height=`${nextHeight}px`;
-      else{
-        fill.style.height='0';
-        fill.style.marginTop=`${parseFloat(fill.style.marginTop||0)+nextHeight}px`;
-      }
-    }
-    const finalMeasured=papers.map(allBottom).map(Math.round);
-    const pixelCorrection=finalMeasured[1-shorter]-finalMeasured[shorter];
-    if(pixelCorrection)fill.style.height=`${Math.max(0,fill.getBoundingClientRect().height+pixelCorrection)}px`;
+    papers.forEach(paper=>paper.style.removeProperty('min-height'));
+    if(mobile)return;
+    const heights=papers.map(paper=>Math.ceil(paper.scrollHeight));
+    const target=Math.max(...heights);
+    papers.forEach(paper=>paper.style.minHeight=`${target}px`);
+    window.__balanceSeen=[spreadIndex,...heights,target];
   });
 }
 function queueBalance(){
@@ -246,6 +210,33 @@ document.querySelectorAll('.hotspot,[data-country]').forEach(button=>button.addE
   showCountry(button.dataset.country);
 }));
 showCountry('中国');
+
+// Camera heatmap: region copy is revealed only after a visitor chooses a hotspot.
+const cameraRegionInfo={
+  '珲春':{
+    title:'珲春片区：住得稳（核心栖息地，虎豹常驻）',
+    copy:'珲春片区共布设7000台红外相机，是全园监测密度最高的核心区域，紧靠中俄边境，森林资源充沛、食源充足，全球密度最高的野生东北虎与远东豹长期在此定居繁育，监测主要负责常驻虎豹种群观测、幼崽记录与跨境动物活动追踪。'
+  },
+  '绥阳':{
+    title:'绥阳片区：养得好（安静安全，适合繁育幼崽）',
+    copy:'绥阳片区布设4000台红外相机，山林幽深、人为干扰少，跨境虎豹过境频次低，以本土稳定虎群为主，安静隐蔽的环境成为母虎抚育幼崽的优选区域，监测重点聚焦幼虎生长、野生虎扩散与林间有蹄类动物种群普查。'
+  },
+  '东宁':{
+    title:'东宁片区：走得通（跨境通道，保障种群交流）',
+    copy:'东宁片区仅布设656台红外相机，整体密度偏低，狭长山林衔接中俄边境，并非老虎长期定居栖息地，而是虎豹跨国迁徙的关键生态廊道，监测主要记录过境野生个体，追踪跨境流动情况，保障两地虎群基因交流。'
+  }
+};
+const cameraRegionDetail=document.getElementById('cameraRegionDetail');
+document.querySelectorAll('[data-camera-region]').forEach(button=>button.addEventListener('click',event=>{
+  event.stopPropagation();
+  const region=button.dataset.cameraRegion;
+  const info=cameraRegionInfo[region];
+  if(!info||!cameraRegionDetail)return;
+  cameraRegionDetail.innerHTML=`<h4>${info.title}</h4><p>${info.copy}</p>`;
+  cameraRegionDetail.hidden=false;
+  document.querySelectorAll('[data-camera-region]').forEach(item=>item.classList.toggle('active',item===button));
+  queueBalance();
+}));
 
 // Poaching categories replace one another; the full copy is not duplicated below.
 const poachInfo={
@@ -395,15 +386,14 @@ function setupFigureLabels(){
   add(document.querySelector('img[alt="东北虎主要猎物相对丰富度变化图"]'),'东北虎主要猎物相对丰富度变化图');
   add(document.querySelector('img[alt="东北虎估计可用栖息地面积及相对变化"]'),'东北虎估计可用栖息地面积及相对变化');
   add(document.getElementById('animatedFlow'),'东北虎“天空地”一体化主动预警全流程',true);
+  add(document.getElementById('cameraRegionMap'),'东北虎红外相机分布热力图',true);
   add(document.getElementById('barrage'),'东北虎相关评论滚动弹幕',true);
   add(document.querySelector('img[alt="东北虎研究文献统计表"]'),'东北虎研究文献统计');
   document.querySelectorAll('.culture-card img').forEach(image=>add(image,image.alt));
-  add(document.getElementById('interactiveWordcloud'),'东北虎相关评论关键词气泡图',true);
-  add(document.querySelector('.mascot-wordcloud'),'亚冬会吉祥物相关词云图');
   document.querySelectorAll('.policy-carousel figure').forEach(figure=>add(figure,figure.querySelector('img')?.alt||'中俄东北虎保护政策图',false,true));
   add(document.querySelector('.game-stage'),'东北虎成长小游戏交互画面',true);
   document.querySelectorAll('img.zoomable').forEach(image=>{
-    if(image.closest('#tigerMap,.animated-flow,.interactive-wordcloud,.policy-carousel,.game-stage'))return;
+    if(image.closest('#tigerMap,.animated-flow,.camera-region-board,.interactive-wordcloud,.policy-carousel,.game-stage'))return;
     const figure=image.closest('figure');
     const title=image.dataset.caption||figure?.querySelector('figcaption')?.textContent?.trim()||image.alt||'东北虎数据图';
     add(figure||image,title,false,!!figure);
@@ -621,10 +611,9 @@ if(previewParams.get('qa')==='1')window.addEventListener('load',()=>setTimeout((
   const balanceDiffs=[...document.querySelectorAll('.book-spread:not(.single-cover-layout)')].map(spread=>{
     const papers=[...spread.children].filter(child=>child.classList.contains('paper'));
     if(papers.length!==2)return 0;
-    const lastBottom=paper=>[...paper.children].reduce((bottom,child)=>Math.max(bottom,child.getBoundingClientRect().bottom-paper.getBoundingClientRect().top),0);
-    return Math.round(Math.abs(lastBottom(papers[0])-lastBottom(papers[1])));
+    return Math.round(Math.abs(papers[0].getBoundingClientRect().bottom-papers[1].getBoundingClientRect().bottom));
   });
-  const balanceDebug=[...document.querySelectorAll('.book-spread:not(.single-cover-layout)')].map(spread=>[...spread.children].filter(child=>child.classList.contains('paper')).map(paper=>({last:Math.round([...paper.children].reduce((bottom,child)=>Math.max(bottom,child.getBoundingClientRect().bottom-paper.getBoundingClientRect().top),0)),fill:Math.round(paper.querySelector('.balance-fill')?.getBoundingClientRect().height||0)})));
+  const balanceDebug=[...document.querySelectorAll('.book-spread:not(.single-cover-layout)')].map(spread=>[...spread.children].filter(child=>child.classList.contains('paper')).map(paper=>({height:Math.round(paper.getBoundingClientRect().height),bottom:Math.round(paper.getBoundingClientRect().bottom)})));
   const barrage=document.getElementById('barrage');
   const barrageBox=barrage?.getBoundingClientRect();
   const barrageClipped=barrage?[...barrage.children].filter(item=>{const rect=item.getBoundingClientRect();return rect.left<barrageBox.left-1||rect.right>barrageBox.right+1}).length:0;
